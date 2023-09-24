@@ -1,0 +1,396 @@
+---
+title: "Il sonno nelle persone"
+author: " di Coppo Cristian"
+output:
+  ioslides_presentation: null
+  slidy_presentation: default
+  widescreen: yes
+  beamer_presentation: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = FALSE,
+	message = FALSE,
+	warning = FALSE,
+	cache = TRUE
+)
+library(dplyr)
+library(tidyverse)
+library(plotly)
+library(ggrepel)
+
+
+#CARICO IL DATASET
+sonno = read_csv("C:/Users/crist/OneDrive/Desktop/Università/DATA_SCIENCE/Progetto Finito/sleep_health_and_lifestyle_dataset.csv")
+
+View(sonno)
+
+#TIDY
+colnames(sonno)[colnames(sonno)=="Blood Pressure"] <- "BloodPressure"
+sonno1 = separate(sonno,BloodPressure, into = c("max_pressure","min_pressure"), sep = "/", convert = TRUE)
+View(sonno1)
+
+sonno2 = sonno1 %>% select(Age, `Quality of Sleep`)
+
+
+#GRAFICI
+sonno3= sonno2 %>% group_by(Age) %>%
+                    summarise(n=n(), avg_quality = mean(`Quality of Sleep`,na.rm=TRUE)) %>%
+                    arrange(desc(avg_quality))
+
+age_quality = ggplot(data=sonno3,mapping = aes(x=Age,y= avg_quality)) +
+              geom_point()+
+              geom_line()+
+              labs(
+                title= "La qualità del sonno alle diverse età",
+                x= "Età",
+                y= "Indice del sonno"
+              )+
+                theme_classic()
+age_quality
+AGEQU <- ggplotly(age_quality)
+
+              
+#CALO DRASTICO A 34 ANNI --> 2 DONNE SOVRAPPESO CHE SOFFRONO DI SLEEP APNEA
+
+sonno4 = sonno1 %>% select(Age,`Sleep Duration`) %>% 
+                    group_by(Age) %>%
+                    summarise(n=n(), durata_media = mean(`Sleep Duration`,na.rm=TRUE)) %>%
+                    arrange(desc(durata_media))
+sonno4
+
+age_duration = ggplot(data=sonno4,mapping = aes(x=Age,y= durata_media)) +
+  geom_point()+
+  geom_line()+
+  labs(
+    title= "Età e durata del sonno",
+    x= "Età",
+    y= "Indice del sonno"
+  )+
+  theme_classic()
+age_duration
+AGEDU <- ggplotly(age_duration)
+
+sonno5 = sonno1 %>% select(Age,`Quality of Sleep`,`Sleep Duration`)%>%
+                    group_by(Age) %>%
+                    summarise(n=n(), sleep_index = mean(`Quality of Sleep`*`Sleep Duration`, na.rm=TRUE))%>%
+                    arrange(desc(sleep_index))
+sonno5
+
+age_index = ggplot(data=sonno5,mapping = aes(x=Age,y= sleep_index)) +
+  geom_point()+
+  geom_line()+
+  labs(
+    title= "Età e Indice del sonno",
+    x= "Età",
+    y= "Indice del sonno"
+  )+
+  theme_classic()
+age_index
+AGEIND <- ggplotly(age_index)
+
+age34 = sonno1 %>% select(Age, `Quality of Sleep`, `Sleep Disorder`) %>%
+                   filter(Age == 34)
+
+age34
+
+#Lavoro e sleep index 
+
+sonno9= sonno1 %>% select(Occupation,`Quality of Sleep`, `Sleep Duration`)%>%
+                  group_by(Occupation) %>%
+                  summarise(n=n(), sleep_index = mean(`Quality of Sleep`*`Sleep Duration`,na.rm=TRUE))%>%
+                  arrange(desc(sleep_index))
+sonno9
+prof_index = ggplot(data=sonno9) +
+             geom_col(mapping = aes(x=Occupation,y= sleep_index,fill=Occupation))+
+             coord_flip()+
+             labs(
+               title= "Professione e Indice del sonno",
+               x= "Professione",
+               y= "Indice del sonno",
+               fill="Professione"
+                )+
+            theme_minimal()
+PROFIN <- ggplotly(prof_index)
+
+
+
+sonno10= sonno1 %>% select(Age,Gender,`Quality of Sleep`, `Sleep Duration`)%>%
+                  group_by(Gender,Age) %>%
+                  summarise(n=n(), sleep_index = mean(`Quality of Sleep`*`Sleep Duration`,na.rm=TRUE))%>%
+                  arrange(desc(sleep_index))
+
+gender_index = ggplot(data=sonno10) +
+             geom_point(mapping = aes(x=Age,y= sleep_index, color=Gender))+
+             scale_color_manual(values = c(Male = "blue", Female = "deeppink3"))+
+             labs(
+               title= "Genere e Indice del sonno",
+               x= "Età",
+               y= "Indice del sonno",
+               fill="Genere",
+                )+
+            theme_minimal()
+gender_index
+
+
+sonno11= sonno1 %>% select(Gender,`Quality of Sleep`, `Sleep Duration`)%>%
+                  group_by(Gender) %>%
+                  summarise(n=n(), sleep_index = mean(`Quality of Sleep`*`Sleep Duration`,na.rm=TRUE))%>%
+                  arrange(desc(sleep_index))
+
+gender_bar = ggplot(data=sonno11) +
+             geom_col(mapping = aes(x=Gender,y= sleep_index,fill=Gender))+
+             labs(
+               title= "Genere e Indice del sonno",
+               x= "Genere",
+               y= "Indice del sonno",
+               fill="Genere"
+                )+
+            theme_minimal()
+GENDERBAR <- ggplotly(gender_bar)
+
+
+
+sonno12 = sonno1 %>% select(`Physical Activity Level`, `Quality of Sleep`, `Sleep Duration`,Age) %>%
+                     group_by(Age) %>%
+                     summarise(n=n(),sleep_index = mean(`Quality of Sleep`*`Sleep Duration`,na.rm=TRUE), avg_phy = mean(`Physical Activity Level`,na.rm=TRUE)) %>%
+                     arrange(desc(avg_phy))                   
+view(sonno12)
+
+
+physical = ggplot(data=sonno12,mapping = aes(x=avg_phy,y=sleep_index, color=Age))    +
+           geom_point()+
+           labs(
+               title= "Attività fisica e Indice del sonno",
+               x= "Attività fisica",
+               y= "Indice del sonno",
+                )+
+            theme_minimal()
+PHYS = ggplotly(physical)
+PHYS
+
+
+
+sonno13= sonno1 %>% select(Age,`BMI Category`,`Sleep Disorder`,`Quality of Sleep`, `Sleep Duration`)%>%
+                    group_by(`Sleep Disorder`) %>%
+                    summarise(n=n(),sleep_index = mean(`Quality of Sleep`*`Sleep Duration`,na.rm=TRUE))%>%
+                    arrange(desc(sleep_index))
+view(sonno13)
+
+dist_index = ggplot(data=sonno13) +
+             geom_col(mapping = aes(x=`Sleep Disorder`,y= sleep_index, fill=`Sleep Disorder`))+
+             scale_fill_manual(values = c(None="red", `Sleep Apnea`= "green",Insomnia="blue"))+
+             labs(
+               title= "Disturbi del sonno e Indice del sonno ",
+               x= "Disturbi del sonno",
+               y= "Indice del sonno",
+               fill="Tipo di disturbo",
+                )+
+            theme_minimal()
+
+
+dist_index
+
+
+
+sonno14= sonno1 %>% select(Age,`BMI Category`,`Sleep Disorder`,`Quality of Sleep`, `Sleep Duration`)%>%
+                    group_by(`BMI Category`) %>%
+                    summarise(n=n(),sleep_index = mean(`Quality of Sleep`*`Sleep Duration`,na.rm=TRUE))%>%
+                    arrange(desc(sleep_index))
+
+
+BMI_index = ggplot(data=sonno14) +
+             geom_col(mapping = aes(x=`BMI Category`,y= sleep_index, fill=`BMI Category`))+
+             scale_fill_manual(values = c(Normal="cyan", `Normal Weight`= "green",Overweight="orange",Obese="red"))+
+             labs(
+               title= "Categria BMI e Indice del sonno ",
+               x= "Categoria BMI",
+               y= "Indice del sonno",
+               fill="Categorie" )
+
+
+BMI_index
+BMI <- ggplotly(BMI_index)
+BMI
+```
+
+```{css, ECHO=FALSE }
+blockquote {
+  background: #ffffff;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+
+/* scrolling */
+slides > slide {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+
+/* hide page numbers */
+slides > slide:not(.nobackground):after {
+  content: '';
+}
+
+```
+
+
+## Perchè?
+
+- Personalmente penso che la qualità del mio sonno sia bassa 
+
+- Voglio scoprire quali sono le prorpietà che influiscono sulla qualità del sonno 
+
+- Confronterò le mie abitudini con i risultati ottenuti dall'analisi
+
+- Lo scopo finale dell'analisi è quello di capire come si posizionano le mie abitudini relative al sonno rispetto a   quelle di una media di persone 
+
+## Cosa andremo a guardare
+
+- Età delle persone 
+
+- Genere 
+
+- Durata e qualità del sonno 
+
+- Tipo di lavoro 
+
+- Livello di attività fisica
+
+- Stato di salute e disturbi del sonno
+
+
+## Il dataset
+
+Per svolgere questa analisi è stato utlizzato il seguente dataset, reso disponibile gratuitamente su Kaggle dall'autore 
+
+[The Sleep Health and Lifestyle Dataset](https://www.kaggle.com/datasets/851c829b2a41e6dd0b5a60388cd4a2cfda2d54433450ed12141237416c8161bc)
+
+Esso contiene le informazioni raccolte da un sondaggio su una popolazione di 374 persone
+
+Queste persone sono diversificate per età (da 27 a 59 anni), genere, professione, stato di salute e stile di vita 
+
+## Domande
+
+- L'età influenza la qualità e la durata del sonno?
+
+- La professione svolta influenza il sonno?
+
+- Ci sono differenze nella qualità del sonno fra i due generi?
+
+- Il livello di attività fisica influenza il sonno?
+
+- Che influenza ha lo stato di salute sul sonno?
+
+## Età e qualità del sonno
+```{r}
+AGEQU
+```
+## Osservazioni 1
+
+Con l'avanzare dell'età la qualità del sonno migliora 
+
+Il grafico presenta dei cali della qualità del sonno a diverse età
+
+Tuttavia, c'è una spiegazione:
+```{r}
+age34
+```
+
+## Età e durata del sonno
+```{r}
+AGEDU
+```
+
+## Osservazioni 2
+
+Il grafico presenta un andamento molto simile al precedente
+
+Anche qui, infatti, la durata del sonno aumenta con l'avanzare dell'età 
+
+I cali anche in questo caso sono dovuti a casi specifici di disturbi del sonno
+
+## Durata e qualità del sonno
+
+Guardando i grafici nelle slide precedenti, ci possiamo accorgere del fatto che per le persone intervistate nel sondaggio la durata del sonno e la sua qualità sono molto legate. 
+Si nota, infatti, come una durata del sonno alta comporta una qualità del sonno maggiore e viceversa.
+
+Nelle analisi successive, quindi, verrà utilizzato un unico indice chiamato "Indice del sonno" che è ottenuto dal prodotto fra durata del sonno e qualità del sonno
+```{r}
+AGEIND
+```
+
+## Professione e Indice del sonno
+```{r}
+PROFIN
+```
+
+## Osservazioni 3
+
+Dal grafico possiamo notare come l'indice del sonno sia maggiore per persone che svolgono lavori quali Ingegnere, Avvocato, Contabile
+
+Lavori come l'addetto alle vendite, invece, presentano un indice del sonno inferiore
+
+Un caso particolare è quello della professione di scienziato, che in questo caso ottiene un indice del sonno basso in quanto sono stati scelti dei soggetti con disturbi del sonno 
+
+## Indice del sonno e genere 
+```{r}
+GENIND <- ggplotly(gender_index)
+GENIND
+GENDERBAR
+```
+
+
+## Osservazioni 4 
+
+Dal primo grafico possiamo notare la distribuzione dell'indice del sonno in relazione all'età, con divisione in base al genere
+
+Notiamo come anche ad occhio si noti subito che i soggetti di genere femminile abbiamo una qualità del sonno maggiore rispetto a quelli di sesso maschile
+
+I soggetti con l'indice del sonno più alto, inoltre, sono tutti di sesso femminile 
+
+## Indice del sonno e attività fisica 
+```{r}
+PHYS
+```
+
+## Osservazioni 5
+
+Possiamo notare che in generale, fare attività fisica comporta un miglior indice del sonno
+
+Nel grafico, tuttavia, possiamo notare un'eccezione a questa regola (pallino in alto a sinistra)
+
+Questo è dovuto al fatto che le persone scelte per il sondaggio di età pari a 53 anni, nonostante facciano poca attività fisica, hanno un indice del sonno molto alto
+
+## Indice del sonno e disturbi del sonno
+```{r}
+dist_index
+```
+
+
+## Indice del sonno e categoria BMI
+```{r}
+BMI
+```
+
+## Osservazioni 6
+
+Possiamo notare come sia la categoria BMI di appartenenza che i disturbi del sonno influiscano nettamente sull'indice del sonno
+
+Le persone senza alcun disturbo del sonno presentano un indice del sonno maggiore 
+
+Allo stesso modo appartenere alla categoria BMI Normal ha come conseguenza un migliore indice del sonno
+
+## Conlcusioni 
+
+In seguito all'analisi effettuata posso affermare che rispetto a i risultati le mie abitudini riguardanti il sonno sono inferiori alla media generale, ma comunque in linea con quelle di età più simili alla mia
+
+Abbiamo visto, infatti, come l'indice del sonno in generale subisca un incremento con l'avanzare dell'età 
+
+
+
+
+Grazie per l'attenzione 
